@@ -82,11 +82,15 @@ http://127.0.0.1:5000
 
 ## 画面イメージ
 
-### 記録一覧画面
-![記録一覧画面](images/index.jpg)
-
-### 記録追加画面
-![記録追加画面](images/add.jpg)
-
-### グラフ画面
-![グラフ画面](images/graph.jpg)
+<table>
+  <tr>
+    <th>記録一覧画面</th>
+    <th>記録追加画面</th>
+    <th>グラフ画面</th>
+  </tr>
+  <tr>
+    <td><img src="images/index.jpg" width="250"></td>
+    <td><img src="images/add.jpg" width="250"></td>
+    <td><img src="images/graph.jpg" width="250"></td>
+  </tr>
+</table>
