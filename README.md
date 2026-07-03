@@ -46,7 +46,7 @@
 ### 1. リポジトリを取得する
 
 ```bash
-git clone <GitHubのリポジトリURL>
+git clone https://github.com/yamanosuku-sketch/workout-log.git
 cd workout-log
 ```
 
