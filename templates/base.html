@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {% block extra_head %}{% endblock %}
+
+    <style>
+        {% block extra_style %}{% endblock %}
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+    
+    {% if active_page == 'index' or active_page == 'graph' %}
+    <div class="bottom-nav">
+        <a href="/" class="{% if active_page =='index' %}active{% endif %}">記録</a>
+        <a href="/graph" class="{% if active_page == 'graph' %}active{% endif %}">グラフ</a>
+    </div>
+    {% endif %}
+
+    {% block script %}{% endblock %}
+</body>
+</html>

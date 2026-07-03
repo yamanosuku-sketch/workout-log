@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}グラフ{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+    
+{% block extra_style %}
+.period-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.period-label {
+    min-width: 180px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2f4f3e;
+}
+
+.period-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    text-decoration: none;
+    color: #2f4f3e;
+    background-color: #eef4eb;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.days-selector {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.days-button {
+    padding: 7px 18px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    color: #58705f;
+    background-color: #eef4eb;
+}
+
+.days-button.active {
+    color: white;
+    background-color: #58705f;
+}
+{% endblock %}
+
+{% block content %}
+<div class="graph-page">
+    <h1>グラフ</h1>
+
+    <section class="graph-card">
+        <div class="graph-card-header">
+            <div>
+                <h2 class="graph-title">体重推移</h2>
+                <p class="graph-description">直近{{ selected_days }}日間の体重変化</p>
+            </div>
+            <!-- <span class="graph-badge">{{ selected_days }}日間</span> -->
+        </div>
+
+        <div class="days-selector">
+            <a href="{{ url_for(
+                'graph',
+                days=30,
+                year=selected_year,
+                half=selected_half,
+            ) }}"
+            class="days-button {% if selected_days == 30 %}active{% endif %}">
+            30日
+            </a>
+
+            <a href="{{ url_for(
+                'graph',
+                days=90,
+                year=selected_year,
+                half=selected_half,
+            ) }}"
+            class="days-button {% if selected_days == 90 %}active{% endif %}">
+            90日
+            </a>
+
+        </div>
+
+        <div class="chart-box">
+            <canvas id="bodyWeightChart"></canvas>
+        </div>
+    </section>
+
+    <section class="graph-card" id="cardio-section">
+        <div class="graph-card-header">
+            <div>
+                <h2 class="graph-title">有酸素運動</h2>
+                <p class="graph-description">月ごとの有酸素運動時間</p>
+            </div>
+            <!-- <span class="graph-badge">月別</span> -->
+        </div>
+
+            <div class="period-selector">
+                {% if selected_half == 1 %}
+                    <a href="{{ url_for('graph', year=selected_year - 1, half=2) }}#cardio-section"
+                        class="period-arrow">
+                        ＜
+                    </a>
+                    <span class="period-label">
+                        {{ selected_year }}年 1月 - 6月
+                    </span>
+
+                    <a href="{{ url_for('graph', year=selected_year, half=2) }}#cardio-section"
+                        class="period-arrow">
+                        ＞
+                    </a>
+
+                {% else %}
+                    <a href="{{ url_for('graph', year=selected_year, half=1) }}#cardio-section"
+                    class="period-arrow">
+                        ＜
+                    </a>
+
+                    <span class="period-label">
+                        {{ selected_year }}年 7月 - 12月
+                    </span>
+
+                    <a href="{{ url_for('graph', year=selected_year + 1, half=1) }}#cardio-section"
+                        class="period-arrow">
+                        ＞
+                    </a>
+                {% endif %}
+            </div>
+
+        <div class="chart-box">
+            <canvas id="cardioChart"></canvas>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const graphLabels = {{ graph_labels | tojson }};
+    const bodyWeights = {{ body_weights | tojson }};
+
+    const ctx = document.getElementById('bodyWeightChart');
+
+    const validBodyWeights = bodyWeights.filter(function(weight) {
+        return weight !== null;
+    });
+
+    const minBodyWeight = Math.floor(Math.min(...validBodyWeights) - 1);
+    const maxBodyWeight = Math.ceil(Math.max(...validBodyWeights) + 1);
+
+    function formatMinutes(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        if (hours === 0) return `${minutes}分`;
+        if (minutes === 0) return `${hours}時間`;
+
+        return `${hours}時間${minutes}分`;
+    }
+
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: graphLabels,
+            datasets: [{
+                label: '体重(kg)',
+                data: bodyWeights,
+                tension: 0.3,
+                borderColor: '#8FBF6A',
+                backgroundColor: 'rgba(143, 191, 106, 0.14)',
+                pointBackgroundColor: '#8FBF6A',
+                pointBorderColor: '#ffffff',
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                     min: minBodyWeight,
+                    max: maxBodyWeight,
+                    ticks: {
+                        stepSize: 0.5,
+                        callback: function(value) {
+                            return value + 'kg';
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    const cardioMonths = {{ cardio_months | tojson }};
+    const cardioMinutes = {{ cardio_minutes | tojson }};
+
+    const cardioCtx = document.getElementById('cardioChart');
+    
+    new Chart(cardioCtx, {
+        type: 'bar',
+        data: {
+            labels: cardioMonths,
+            datasets: [{
+                label: '有酸素(分)',
+                data: cardioMinutes,
+                backgroundColor: '#8FBF6A',
+                borderRadius: 10,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '分';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatMinutes(context.raw);
+                        }    
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

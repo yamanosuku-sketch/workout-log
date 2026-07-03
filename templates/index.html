@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}WORKOUT LOG{% endblock %}
+
+{% block extra_style %}
+{% endblock %}
+
+{% block content %}
+<div class="index-page">
+<h1>トレーニング記録</h1>
+
+<div class="log-list">
+    {% for date in date_list %}
+        {% if date in daily_data %}
+            <a href="/update_by_date/{{ date }}" class="log-card log-card-active">
+                <div class="log-card-header">
+                    <strong class="log-date active-date-pill">{{ date }}</strong>
+                </div>
+                    
+                <div class="log-body">
+                    {% if daily_data[date].body_weight is not none %}
+                        <div class="log-item">体重: {{ daily_data[date].body_weight }} kg</div>
+                    {% else %}
+                        <div class="log-item">体重: -</div>
+                    {% endif %}
+
+                    {% if daily_data[date].exercises %}
+                        <div class="log-divider"></div>
+                    {% endif %}
+
+                    {% for exercise, count in daily_data[date].exercises.items() %}
+                        <div class="log-item">{{ exercise }}: {{ count }}セット</div>
+                    {% endfor %}
+                    
+                    {% if daily_data[date].cardios %}
+                        <div class="log-divider"></div>
+                        {% for cardio in daily_data[date].cardios %}
+                            <div class="log-item">有酸素: {{ cardio.machine }} {{ cardio.mins }}分</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </a>
+        {% else %}
+            <a href="/add?date={{ date }}" class="log-card log-card-rest">
+                <div class="rest-card-line">
+                    <strong class="log-date">{{ date }}</strong>
+                    <span class="rest-text">記録なし</span>
+                </div>
+            </a>
+        {% endif %}
+    {% endfor %}
+</div>
+    
+<a href="/add" class="btn btn-primary add-record-btn">+ 記録を追加する</a>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+window.onload = function() {
+    window.scrollTo(0, document.body.scrollHeight);
+};
+</script>
+{% endblock %}
