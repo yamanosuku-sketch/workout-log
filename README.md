@@ -1,5 +1,9 @@
 # Workout Log
 
+## 公開URL
+
+https://yamanosuku.pythonanywhere.com
+
 ## アプリ概要
 
 このアプリは、日々の体重、筋力トレーニング、有酸素運動を記録し、日々の運動の成果を可視化できるWebアプリです。
