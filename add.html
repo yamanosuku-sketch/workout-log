@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}記録を追加{% endblock %}
+
+{% block extra_style %}
+{% endblock %}
+
+{% block content %}
+<div class="form-page">
+
+<h1>筋トレを追加</h1>
+
+<form action="/add" method="POST">
+
+    <label>日付:</label>
+    <input type="date" id="date-input" name="date" required>
+
+    <label>体重(kg):</label>
+    <input type="number" name="body_weight" step="0.1">
+
+    <h2>【筋トレ】</h2>
+
+    <datalist id="exercise-options">
+        {% for exercise in exercise_options %}
+            <option value="{{ exercise }}">
+        {% endfor %}
+    </datalist>
+
+    <div id="exercise-container">
+        <div class="exercise-block">
+            <label>種目:</label>
+            
+            <input 
+                type="text"
+                class="exercise-select"
+                list="exercise-options"
+                placeholder="種目を追加"
+                oninput="updateExerciseBlock(this)"
+            >
+
+            <div class="sets-container">
+                <div class="set-row">
+                    <label>1セット目:</label>
+
+                    <input 
+                        type="hidden" 
+                        name="exercise_for_set[]" 
+                        class="exercise-for-set"
+                        value=""
+                    >
+
+                    <div class="set-input-row">
+                        <div class="input-group">
+                            <label>重量 (kg)</label>
+                            <input
+                                type="number"
+                                name="weight[]"
+                                step="0.1"
+                                placeholder="重量(kg)"
+                                class="weight-input"
+                            >
+                        </div>
+                        <span class="multiply-mark">×</span>
+                        <div class="input-group">
+                            <label>回数 (rep)</label>
+                            <input
+                                type="number"
+                                name="reps[]"
+                                placeholder="回数"
+                                class="reps-input"
+                            >
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onclick="removeSet(this)"
+                        class="delete-set-btn"
+                    >
+                        セット削除
+                    </button>
+                </div>
+            </div>
+    
+            <button type="button" onclick="addSet(this)" class="add-btn">+ セットを追加</button>
+
+        </div>
+    </div>
+    <button type="button" onclick="addExercise()" class="add-btn">+ 種目を追加</button>
+    
+<hr>
+<h2>【有酸素運動】</h2>
+
+<label>マシン</label>
+<input
+    type="text"
+    name="cardio_machine"
+    list="cardio-options"
+    placeholder="未指定"
+>
+
+<datalist id="cardio-options">
+    {% for machine in cardio_options %}
+        <option value="{{ machine }}">
+    {% endfor %}
+</datalist>
+
+<label>時間(分)</label>
+    <input type="number"
+            name="cardio_mins"
+            placeholder="30"
+    >
+
+    <button type="submit" class="btn btn-primary add-save-btn">保存</button>
+
+</form>
+<br>
+<a href="/">キャンセル</a>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+    const dateInput = document.getElementById('date-input');
+
+    if (dateParam) {
+        dateInput.value = dateParam;
+    } else {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+};
+
+function updateExerciseBlock(selectElement) {
+    const exerciseBlock = selectElement.closest('.exercise-block');
+    const hiddenInputs = exerciseBlock.querySelectorAll('.exercise-for-set');
+
+    hiddenInputs.forEach(function(input) {
+        input.value = selectElement.value;
+    });
+}
+
+function addSet(button) {
+    const exerciseBlock = button.closest('.exercise-block');
+    const selectedExercise = exerciseBlock.querySelector('.exercise-select').value;
+    const setsContainer = exerciseBlock.querySelector('.sets-container');
+
+    const rows = setsContainer.querySelectorAll('.set-row');
+    const lastRow = rows[rows.length - 1];
+
+    const lastWeight = lastRow.querySelector('.weight-input').value;
+    const lastReps = lastRow.querySelector('.reps-input').value;
+
+    const newRow = document.createElement('div');
+    newRow.className = 'set-row';
+
+    newRow.innerHTML = `
+        <label>${rows.length + 1}セット目:</label>
+
+        <input type="hidden" name="exercise_for_set[]" class="exercise-for-set" value="${selectedExercise}">
+
+        <div class="set-input-row">
+            <div class="input-group">
+                <label>重量 (kg)</label>
+                <input
+                    type="number"
+                    name="weight[]"
+                    value="${lastWeight}"
+                    step="0.1"
+                    class="weight-input"
+                >
+            </div>
+
+            <span class="multiply-mark">×</span>
+
+            <div class="input-group">
+                <label>回数 (rep)</label>
+                <input
+                    type="number"
+                    name="reps[]"
+                    value="${lastReps}"
+                    class="reps-input"
+                >
+            </div>
+        </div>
+
+        <button
+            type="button"
+            onclick="removeSet(this)"
+            class="delete-set-btn"
+        >
+            セット削除
+        </button>
+    `;
+
+    setsContainer.appendChild(newRow);
+    window.scrollTo(0, document.body.scrollHeight);
+}
+function addExercise() {
+    const exerciseContainer = document.getElementById('exercise-container');
+
+    const newBlock = document.createElement('div');
+    newBlock.className = 'exercise-block';
+
+    newBlock.innerHTML = `
+        <hr>
+
+        <label>種目:</label>
+
+        <input
+            type="text"
+            class="exercise-select"
+            list="exercise-options"
+            placeholder="種目を入力"
+            oninput="updateExerciseBlock(this)"
+        >
+
+        <div class="sets-container">
+            <div class="set-row">
+
+                <label>1セット目:</label>
+
+                <input type="hidden"
+                       name="exercise_for_set[]"
+                       class="exercise-for-set"
+                       value=""
+                >
+
+                <div class="set-input-row">
+                    <div class="input-group">
+                        <label>重量 (kg)</label>
+                        <input
+                            type="number"
+                            name="weight[]"
+                            step="0.1"
+                            placeholder="重量(kg)"
+                            class="weight-input"
+                        >
+                    </div>
+
+                    <span class="multiply-mark">×</span>
+
+                    <div class="input-group">
+                        <label>回数 (rep)</label>
+                        <input
+                            type="number"
+                            name="reps[]"
+                            placeholder="回数"
+                            class="reps-input"
+                        >
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="removeSet(this)"
+                    class="delete-set-btn"
+                >
+                    セット削除
+                </button>
+
+            </div>
+        </div>
+
+        <button type="button" onclick="addSet(this)" class="add-btn">
+            + セットを追加
+        </button>
+    `;
+
+    exerciseContainer.appendChild(newBlock);
+}
+
+function removeSet(button) {
+    const setRow = button.closest('.set-row');
+    setRow.remove();
+}
+</script>
+{% endblock %}

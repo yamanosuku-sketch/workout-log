@@ -294,24 +294,7 @@ class BodyWeightManager:
 
         conn.commit()
         conn.close()
-        
-
-    def get_exercise_names(self):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            SELECT DISTINCT exercise
-            FROM workout_logs
-            WHERE exercise IS NOT NULL
-                AND TRIM(exercise) != ''
-            ORDER BY exercise
-        ''')
-
-        rows = cursor.fetchall()
-        conn.close
-
-        return [row[0] for row in rows]
+    
 
 if __name__ == '__main__':
     init_db()

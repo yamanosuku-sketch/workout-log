@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}記録の編集{% endblock %}
+
+{% block extra_style %}
+{% endblock %}
+
+{% block content %}
+<div class="form-page">
+
+<h1>記録の編集</h1>
+<form action="/update_by_date/{{ date }}" method="POST">
+    <label>日付:</label>
+    <input type="date" value="{{ date }}" readonly>
+
+    <label>体重(kg):</label>
+    <input type="number" name="body_weight" value="{{ body_weight }}" step="0.1">
+
+    <h2>【筋トレ】</h2>
+
+    <datalist id="exercise-options">
+        {% for option in exercise_options %}
+            <option value="{{ option }}">
+        {% endfor %}
+    </datalist>
+
+    <div id="sets-container">
+
+        {% for exercise, exercise_logs in grouped_logs.items() %}
+        <div class="exercise-block">
+            <label>種目</label>
+            <input 
+                type="text"
+                class="exercise-select"
+                list="exercise-options"
+                value="{{ exercise }}"
+                oninput="updateExerciseBlock(this)"
+            >
+            
+            {% for log in exercise_logs %}
+            <div class="set-row">
+                <div class="set-title">
+                    {{ log[6] }}セット目
+                </div>
+
+                <input type="hidden" name="exercise_for_set[]" value="{{ exercise }}" class="exercise-for-set">
+                <div class="set-input-row">
+                <div class="input-group">
+                    <label>重量 (kg)</label>
+                    <input
+                        type="number"
+                        name="weight[]"
+                        value="{{ log[4] }}"
+                        step="0.1"
+                        class="weight-input">
+                </div>
+
+                <span class="multiply-mark">×</span>
+
+                <div class="input-group">
+                    <label>回数 (rep)</label>
+                    <input
+                        type="number"
+                        name="reps[]"
+                        value="{{ log[5] }}"
+                        class="reps-input">
+                </div>
+            </div>
+
+                <button
+                    type="button"
+                    onclick="removeSet(this)"
+                    class="delete-set-btn"
+                >
+                    セット削除
+                </button>
+
+            </div>
+            {% endfor %}
+            <div class="exercise-actions">
+                <button type="button" onclick="addSet(this)" class="add-btn">
+                    + セットを追加
+                </button>
+
+                <button type="button"
+                        onclick="removeExercise(this)"
+                        class="delete-set-btn">
+                    種目削除
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" onclick="addExercise()" class="add-btn">
+        + 種目を追加
+    </button>
+
+    <hr>
+    <h2>【有酸素運動】</h2>
+
+    <label>マシン</label>
+    <input
+        type="text"
+        name="cardio_machine"
+        list="cardio-options"
+        value="{% if cardio_logs %}{{ cardio_logs[0][2] }}{% endif %}"
+    >
+
+    <datalist id="cardio-options">
+        {% for machine in cardio_options %}
+            <option value="{{ machine }}">
+        {% endfor %}
+    </datalist>
+
+    <label>時間(分)</label>
+    <input type="number"
+            name="cardio_mins"
+            value="{% if cardio_logs %}{{ cardio_logs[0][3] }}{% endif %}"
+    >
+
+<div class="update-action-row">
+    <button type="submit" class="btn btn-primary">更新して保存</button>
+</div>
+</form>
+
+<form action="/delete_by_date/{{ date }}" method="POST" onsubmit="return confirm('本当にこの日のこの記録を削除しますか？');">
+    <button type="submit" class="btn delete-btn">この記録を削除する</button>
+</form>
+<br>
+
+<a href="/">キャンセル</a>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+function addSet(button) {
+    const exerciseBlock = button.closest('.exercise-block');
+    const select = exerciseBlock.querySelector('.exercise-select');  
+    const exerciseName = select.value;
+    
+    const rows = exerciseBlock.querySelectorAll('.set-row');
+    const lastRow = rows[rows.length - 1];
+
+    let lastWeight = '';
+    let lastReps = '';
+
+    if (lastRow) {
+        lastWeight = lastRow.querySelector('.weight-input').value;
+        lastReps = lastRow.querySelector('.reps-input').value;
+    }
+
+    const newRow = document.createElement('div');
+    newRow.className = 'set-row';
+
+    newRow.innerHTML = `
+        <div class="set-title">
+            ${rows.length + 1}セット目
+        </div>
+
+        <input
+            type="hidden"
+            name="exercise_for_set[]"
+            value="${exerciseName}"
+            class="exercise-for-set"
+        >
+
+        <div class="set-input-row">
+            <div class="input-group">
+                <label>重量 (kg)</label>
+                <input
+                    type="number"
+                    name="weight[]"
+                    value="${lastWeight}"
+                    step="0.1"
+                    class="weight-input"
+                >
+            </div>
+            
+            <span class="multiply-mark">×</span>
+
+            <div class="input-group">
+                <label>回数 (rep)</label>
+                <input
+                    type="number"
+                    name="reps[]"
+                    value="${lastReps}"
+                    class="reps-input"
+                >
+            </div>
+        </div>
+        <button
+            type="button"
+            onclick="removeSet(this)"
+            class="delete-set-btn"
+        >
+            セット削除
+        </button>
+    `;
+
+    const exerciseActions = button.closest('.exercise-actions');
+
+    if (exerciseActions) {
+        exerciseBlock.insertBefore(newRow, exerciseActions);
+    }else {
+        exerciseBlock.insertBefore(newRow, button);
+
+    }    
+}
+
+function removeSet(button) {
+    const setRow = button.closest('.set-row');
+    setRow.remove();        
+}
+
+function addExercise() {
+    const setsContainer = document.getElementById('sets-container');
+    
+    const newBlock = document.createElement('div');
+    newBlock.className = 'exercise-block';
+    newBlock.innerHTML = `
+        <hr>
+        <label>種目:</label>
+            <input
+                type="text"
+                class="exercise-select"
+                list="exercise-options"
+                placeholder="種目を入力"
+                oninput="updateExerciseBlock(this)"
+            >
+
+        <div class="set-row">
+            <div class="set-title">
+                1セット目
+            </div>
+
+            <input
+                type="hidden"
+                name="exercise_for_set[]"
+                value=""
+                class="exercise-for-set"
+            >
+
+            <div class="input-group">
+                <label>重量 (kg)</label>
+                <input
+                    type="number"
+                    name="weight[]"
+                    step="0.1"
+                    class="weight-input"
+                >
+            </div>
+
+            <div class="input-group">
+                <label>回数 (rep)</label>
+                <input
+                    type="number"
+                    name="reps[]"
+                    class="reps-input"
+                >
+            </div>
+
+            <button
+                type="button"
+                onclick="removeSet(this)"
+                class="delete-set-btn"
+            >
+                セット削除
+            </button>
+        </div>
+
+        <button
+            type="button"
+            onclick="addSet(this)"
+            class="add-btn"
+        >
+            + セットを追加
+        </button>
+    `;
+
+    setsContainer.appendChild(newBlock);
+}
+
+function updateExerciseBlock(selectElement) {
+    const exerciseBlock = selectElement.closest('.exercise-block');
+    const hiddenInputs = exerciseBlock.querySelectorAll('.exercise-for-set');
+    
+    hiddenInputs.forEach(function(input) {
+        input.value = selectElement.value;
+    });
+}
+
+function removeExercise(button) {
+    button.closest('.exercise-block').remove();        
+}
+</script>
+{% endblock %}
