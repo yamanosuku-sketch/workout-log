@@ -14,6 +14,13 @@
     </style>
 </head>
 <body>
+    <div class="demo-notice">
+        <strong>共有デモ版です</strong>
+        <span>
+            入力・編集・削除した内容は、ほかの利用者にも表示されます。
+            個人情報や実際の健康情報は入力しないでください。
+        </span>
+    </div>
     {% block content %}{% endblock %}
     
     {% if active_page == 'index' or active_page == 'graph' %}
